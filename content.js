@@ -45,7 +45,7 @@ function highlightWords(words, textColor, bgColor, listId) {
     function walk(node) {
         if (node.nodeType === 3) {
             const parent = node.parentNode;
-            if (!parent || parent.classList?.contains(className)) return; // ✅ 已高亮跳过
+            if (!parent || parent.classList?.contains(className)) return; //  已高亮跳过
 
             const text = node.nodeValue;
             if (!regex.test(text)) return;
@@ -79,7 +79,7 @@ function highlightWords(words, textColor, bgColor, listId) {
 
 // 刷新所有高亮
 function refreshHighlights() {
-    // ✅ 每次刷新前先清除旧的高亮，防止重复嵌套
+    // 每次刷新前先清除旧的高亮，防止重复嵌套
     document.querySelectorAll('[class^="multi-highlighted-"]').forEach(el => {
         const parent = el.parentNode;
         if (parent) {
@@ -107,59 +107,13 @@ chrome.runtime.onMessage.addListener(msg => {
 });
 
 
-
-
-// 下面是原来的函数
-
+// 用 DocumentFragment 替代 innerHTML → 避免破坏 HTML 结构。
 //
-//     function walk(node) {
-//         if (node.nodeType === 3) {
-//             const parent = node.parentNode;
-//             let text = node.nodeValue;
-//             let replaced = false;
+// 合并正则 → 一次正则即可匹配所有单词，大幅减少循环次数。
 //
-//             words.split("\n").forEach(word => {
-//                 word = word.trim();
-//                 if (!word) return;
-//                 const regex = new RegExp(`\\b(${escapeRegex(word)})\\b`, "gi");
-//                 if (regex.test(text)) {
-//                     replaced = true;
-//                     text = text.replace(regex, `<span class="${className}">$1</span>`);
-//                 }
-//             });
+// 避免重复高亮 → 检查父节点是否已有 multi-highlighted-* 类。
 //
-//             if (replaced) {
-//                 const temp = document.createElement("span");
-//                 temp.innerHTML = text;
-//                 parent.replaceChild(temp, node);
-//             }
-//         } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
-//             Array.from(node.childNodes).forEach(walk);
-//         }
-//     }
+// 刷新前清理旧高亮 → 防止多次点击后 <span> 越套越多。
 //
-//     walk(document.body);
-// }
-//
-//
-//
-// // 启用所有列表 为每个列表都加一个index 编号  确保每个列表都有不同的高亮配置
-// function refreshHighlights() {
-//     chrome.storage.local.get("lists", data => {
-//         const lists = data.lists || [];
-//         lists.forEach((list, index) => {
-//             if (list.enabled) {
-//                 highlightWords(list.words, list.textColor, list.bgColor, index);
-//             }
-//         });
-//     });
-// }
-//
-//
-// // 初次加载
-// refreshHighlights();
-//
-// // 接收 popup 消息更新
-// chrome.runtime.onMessage.addListener(msg => {
-//     if (msg.type === "update") refreshHighlights();
-// });
+// 性能优化 → 跳过 script/style/textarea/input，避免污染不该高亮的内容。
+// 存在待解决的问题:比如hedge fund，hedge和fund在list1中是两个单独的词，hedge fund在list2中是一个短语，显示的是list1中的高亮效果；

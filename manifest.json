@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Multi-list Highlighter",
+  "name": "Words Highlighter",
   "version": "1.0",
-  "description": "支持多个列表，高亮网页文本",
+  "description": "在网页中高亮显示单词、习语列表中的词或短语",
   "permissions": ["storage", "scripting", "activeTab"],
   "host_permissions": ["<all_urls>"],
   "action": {
