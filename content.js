@@ -106,10 +106,14 @@ chrome.runtime.onMessage.addListener(msg => {
     if (msg.type === "update") refreshHighlights();
 });
 
-// 该版本可使用
+
 // 用 DocumentFragment 替代 innerHTML → 避免破坏 HTML 结构。
+//
 // 合并正则 → 一次正则即可匹配所有单词，大幅减少循环次数。
+//
 // 避免重复高亮 → 检查父节点是否已有 multi-highlighted-* 类。
+//
 // 刷新前清理旧高亮 → 防止多次点击后 <span> 越套越多。
+//
 // 性能优化 → 跳过 script/style/textarea/input，避免污染不该高亮的内容。
 // 存在待解决的问题:比如hedge fund，hedge和fund在list1中是两个单独的词，hedge fund在list2中是一个短语，显示的是list1中的高亮效果；
