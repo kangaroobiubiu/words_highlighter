@@ -58,22 +58,19 @@ function buildWordMapAndRegex(lists) {
     // 长词优先
     allWords.sort((a, b) => b.word.length - a.word.length);
 
-    if (allWords.length === 0) return { regex: null, wordMap };
-
     const regex = new RegExp(`\\b(${allWords.map(w => escapeRegex(w.word)).join("|")})\\b`, "gi");
 
     return { regex, wordMap };
 }
 
-// 高亮文本节点
+// 分块遍历 DOM，高亮文本
 function highlightTextInNode(node, regex, wordMap) {
     if (node.nodeType === 3) {
         const parent = node.parentNode;
         if (!parent || /(script|style|textarea|input)/i.test(parent.tagName)) return;
-        if (parent.classList && Array.from(parent.classList).some(c => c.startsWith("multi-highlighted-"))) return;
 
         const text = node.nodeValue;
-        if (!regex || !regex.test(text)) return;
+        if (!regex.test(text)) return;
 
         const frag = document.createDocumentFragment();
         let lastIndex = 0;
@@ -97,23 +94,22 @@ function highlightTextInNode(node, regex, wordMap) {
 
         parent.replaceChild(frag, node);
     } else if (node.nodeType === 1 && node.childNodes) {
-        if (node.classList && Array.from(node.classList).some(c => c.startsWith("multi-highlighted-"))) return;
-        Array.from(node.childNodes).forEach(child => highlightTextInNode(child, regex, wordMap));
+        const children = Array.from(node.childNodes);
+        children.forEach(child => highlightTextInNode(child, regex, wordMap));
     }
 }
 
-// 分批高亮 DOM
+// 分批高亮 DOM，避免卡顿
 function highlightAllListsBatched(lists) {
     clearHighlights();
     injectStyles(lists);
 
     const { regex, wordMap } = buildWordMapAndRegex(lists);
-    if (!regex || wordMap.size === 0) return;
+    if (wordMap.size === 0) return;
 
     const nodes = Array.from(document.body.childNodes);
 
-    function processBatch(batchSize = 200) {
-        // batchSize = 50  改成 300
+    function processBatch(batchSize = 50) {
         let count = 0;
 
         function next() {
@@ -133,31 +129,11 @@ function highlightAllListsBatched(lists) {
     processBatch();
 }
 
-// 定义 observer，先创建但暂不启动
-const observer = new MutationObserver(mutations => {
-    chrome.storage.local.get("lists", data => {
-        const lists = data.lists || [];
-        if (lists.length === 0) return;
-        const { regex, wordMap } = buildWordMapAndRegex(lists);
-
-        mutations.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-                highlightTextInNode(node, regex, wordMap);
-            });
-        });
-    });
-});
-
-// 刷新高亮（安全处理 observer）
+// 刷新高亮
 function refreshHighlights() {
     chrome.storage.local.get("lists", data => {
         const lists = data.lists || [];
-        if (lists.length === 0) return;
-
-        observer.disconnect(); // 暂时停止监听
         highlightAllListsBatched(lists);
-        observer.observe(document.body, { childList: true, subtree: true }); // 恢复监听
-        // observer.observe(document.body, { childList: true, subtree: true ,characterData: true });  characterData会影响文字输入
     });
 }
 
@@ -169,5 +145,31 @@ chrome.runtime.onMessage.addListener(msg => {
     if (msg.type === "update") refreshHighlights();
 });
 
-// 该版本可使用，但是点击下一页，会没有高亮反应;目前谷歌搜索点击下一页可以自动刷新高亮/百度搜索不行
-// 高亮效率能否再提高?
+// 监听新增 DOM 节点，增量高亮
+const observer = new MutationObserver(mutations => {
+    chrome.storage.local.get("lists", data => {
+        const lists = data.lists || [];
+        if (lists.length === 0) return;
+        const { regex, wordMap } = buildWordMapAndRegex(lists);
+
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => highlightTextInNode(node, regex, wordMap));
+        });
+    });
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
+
+// 不可使用 会不断加载
+// 长词优先匹配
+//
+// 多列表独立样式，高亮互不覆盖
+//
+// 支持 10 万+ 单词列表不卡顿
+//
+// 分块遍历 DOM + requestIdleCallback 分批处理
+//
+// Map 替代 find，提高匹配速度
+//
+// 动态增量更新，减少重复渲染

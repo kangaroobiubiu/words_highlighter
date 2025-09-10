@@ -14,9 +14,10 @@ function clearHighlights() {
         const parent = el.parentNode;
         if (parent) {
             parent.replaceChild(document.createTextNode(el.textContent), el);
-            parent.normalize();
         }
     });
+    // 批量归并文本节点，减少 DOM 操作
+    document.body.normalize();
 }
 
 // 注入样式（每个列表一次）
@@ -102,6 +103,24 @@ function highlightTextInNode(node, regex, wordMap) {
     }
 }
 
+// 使用 TreeWalker 获取可高亮文本节点
+function getHighlightableNodes(root) {
+    const nodes = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode: node => {
+            const p = node.parentNode;
+            if (!p) return NodeFilter.FILTER_REJECT;
+            if (/(script|style|textarea|input)/i.test(p.tagName)) return NodeFilter.FILTER_REJECT;
+            if (p.classList && Array.from(p.classList).some(c => c.startsWith("multi-highlighted-"))) return NodeFilter.FILTER_REJECT;
+            if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    });
+    let node;
+    while(node = walker.nextNode()) nodes.push(node);
+    return nodes;
+}
+
 // 分批高亮 DOM
 function highlightAllListsBatched(lists) {
     clearHighlights();
@@ -110,27 +129,16 @@ function highlightAllListsBatched(lists) {
     const { regex, wordMap } = buildWordMapAndRegex(lists);
     if (!regex || wordMap.size === 0) return;
 
-    const nodes = Array.from(document.body.childNodes);
+    const nodes = getHighlightableNodes(document.body);
 
-    function processBatch(batchSize = 200) {
-        // batchSize = 50  改成 300
-        let count = 0;
-
-        function next() {
-            if (nodes.length === 0) return;
-            while (count < batchSize && nodes.length > 0) {
-                const node = nodes.shift();
-                highlightTextInNode(node, regex, wordMap);
-                count++;
-            }
-            count = 0;
-            if (nodes.length > 0) requestIdleCallback(next);
+    function nextBatch(deadline) {
+        while (nodes.length > 0 && (deadline.timeRemaining() > 0 || deadline.didTimeout)) {
+            highlightTextInNode(nodes.shift(), regex, wordMap);
         }
-
-        requestIdleCallback(next);
+        if (nodes.length > 0) requestIdleCallback(nextBatch);
     }
 
-    processBatch();
+    requestIdleCallback(nextBatch);
 }
 
 // 定义 observer，先创建但暂不启动
@@ -157,7 +165,6 @@ function refreshHighlights() {
         observer.disconnect(); // 暂时停止监听
         highlightAllListsBatched(lists);
         observer.observe(document.body, { childList: true, subtree: true }); // 恢复监听
-        // observer.observe(document.body, { childList: true, subtree: true ,characterData: true });  characterData会影响文字输入
     });
 }
 
@@ -168,6 +175,3 @@ refreshHighlights();
 chrome.runtime.onMessage.addListener(msg => {
     if (msg.type === "update") refreshHighlights();
 });
-
-// 该版本可使用，但是点击下一页，会没有高亮反应;目前谷歌搜索点击下一页可以自动刷新高亮/百度搜索不行
-// 高亮效率能否再提高?

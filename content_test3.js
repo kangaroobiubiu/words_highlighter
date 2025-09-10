@@ -185,6 +185,7 @@ const observer = new MutationObserver(mutations => {
 
 observer.observe(document.body, { childList: true, subtree: true });
 
+// 不可使用 无高亮效果
 // Trie 树版本的高亮插件，目标是：
 //
 // 支持 几十万条单词高亮
