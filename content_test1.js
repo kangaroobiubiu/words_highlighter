@@ -123,7 +123,7 @@ chrome.runtime.onMessage.addListener(msg => {
 });
 
 
-// 尝试解决
+// 长网页 后半部分 没有高亮效果
 // 存在待解决的问题:比如hedge fund，hedge和fund在list1中是两个单独的词，hedge fund在list2中是一个短语，显示的是list1中的高亮效果；
 // 所有列表单词合并，按长度降序匹配 → 长词优先。
 //
