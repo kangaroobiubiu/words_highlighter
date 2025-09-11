@@ -1,6 +1,6 @@
 # words_highlighter
 Highlight words and idioms in the list on the webpage
-## 脚本说明
+## chrome插件说明
 - `content` `content_test2` ` content_test8` 是可以正常使用的  `content_test8`增加了长度优先处理，也就是hedge fund会整体高亮而不是拆成hedge和fund两部分
 
 ## 在网页中高亮显示单词、习语列表中的词或短语
