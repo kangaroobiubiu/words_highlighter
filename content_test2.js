@@ -9,6 +9,7 @@ function escapeRegex(s) {
 }
 
 // 清除旧高亮
+// 清除网页上已有的高亮 <span> 标签，把文字恢复成普通文本
 function clearHighlights() {
     document.querySelectorAll('[class^="multi-highlighted-"]').forEach(el => {
         const parent = el.parentNode;
@@ -61,7 +62,7 @@ function buildWordMapAndRegex(lists) {
     if (allWords.length === 0) return { regex: null, wordMap };
 
     const regex = new RegExp(`\\b(${allWords.map(w => escapeRegex(w.word)).join("|")})\\b`, "gi");
-
+    // ["cat", "dog"] ----->\\b(cat|dog)\\b
     return { regex, wordMap };
 }
 
@@ -112,7 +113,7 @@ function highlightAllListsBatched(lists) {
 
     const nodes = Array.from(document.body.childNodes);
 
-    function processBatch(batchSize = 200) {
+    function processBatch(batchSize = 100) {
         // batchSize = 50  改成 300
         let count = 0;
 
@@ -169,5 +170,6 @@ chrome.runtime.onMessage.addListener(msg => {
     if (msg.type === "update") refreshHighlights();
 });
 
-// 该版本可使用，但是点击下一页，会没有高亮反应;目前谷歌搜索点击下一页可以自动刷新高亮/百度搜索不行
+// 该版本可正常使用，但是点击下一页，会没有高亮反应;目前谷歌搜索点击下一页可以自动刷新高亮/百度搜索不行
 // 高亮效率能否再提高?
+// 新发现问题，如果在输入框输入的单词存在于单词列表中，会出现光标异常，输入异常
