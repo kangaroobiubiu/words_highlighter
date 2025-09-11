@@ -2,6 +2,7 @@
 - Highlight words and idioms in the list on the webpage
 
 ## 单词\习语高亮显示
+- 添加列表，添加词汇，习语等，设置高亮效果，然后记得点击“保存”，列表有更新也要记得“保存”，保存之后将词表和高亮效果存在本地。
 
 ## chrome插件说明
 - `content` `content_test2` ` content_test8` 是可以正常使用的  `content_test8`增加了长度优先处理，也就是hedge fund会整体高亮而不是拆成hedge和fund两部分
