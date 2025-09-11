@@ -1,6 +1,8 @@
 ## words_highlighter 
 - Highlight words and idioms in the list on the webpage
 
+
+
 ## 单词\习语高亮显示
 - 添加列表，向列表中添加词汇，习语等，设置高亮效果，最后记得点击“保存”。列表有更新也要记得“保存”，保存之后会将词表和高亮效果存在浏览器中;
 - 也可以选择用导入txt文件的方式来添加词汇列表，txt格式:一行放一个词。
@@ -17,6 +19,8 @@ observer
 - 先使用content_test8吧，测试下来，浏览各大英文网站都是能正常高亮的
 - 在manifest.json进行设置
 - <img width="1490" height="804" alt="图片" src="https://github.com/user-attachments/assets/f5c7686f-ffac-4e63-8ac7-2c8c4da73c0e" />
+- 目前还没有上传到谷歌插件商店中，如需使用，直接下载当前文件，然后在谷歌浏览器的`管理扩展程序`--->`加载未打包的扩展程序`
+- <img width="1903" height="870" alt="图片" src="https://github.com/user-attachments/assets/7d18b8c8-bcc8-4f17-bebe-ea8caeeb21c5" />
 
 
 ## 在网页中高亮显示单词、习语列表中的词或短语
