@@ -5,12 +5,13 @@
 - 添加列表，向列表中添加词汇，习语等，设置高亮效果，最后记得点击“保存”。列表有更新也要记得“保存”，保存之后会将词表和高亮效果存在浏览器中;
 - 也可以选择用导入txt文件的方式来添加词汇列表，txt格式:一行放一个词。
 - txt文件格式案例如下:
-
-accumulate <br>
-promote   <br>
-council   <br>
-observer  <br>
-
+- 
+```
+accumulate 
+promote   
+council   
+observer  
+```
 
 ## chrome插件说明
 - `content` `content_test2` ` content_test8` 是可以正常使用的  `content_test8`增加了长度优先处理，也就是hedge fund会整体高亮而不是拆成hedge和fund两部分
