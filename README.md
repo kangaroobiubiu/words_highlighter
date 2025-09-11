@@ -6,10 +6,10 @@
 - 也可以选择用导入txt文件的方式来添加词汇列表，txt格式:一行放一个词。
 - 格式案例如下:
 
-accumulate <b>
-promote   <b>
-council   <b>
-observer  <b>
+accumulate <br>
+promote   <br>
+council   <br>
+observer  <br>
 
 
 ## chrome插件说明
