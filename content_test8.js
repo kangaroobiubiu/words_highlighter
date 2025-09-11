@@ -1,6 +1,12 @@
 // 转义 HTML
 function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    return s.replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    }[c]));
 }
 
 // 转义正则特殊字符
@@ -9,7 +15,6 @@ function escapeRegex(s) {
 }
 
 // 清除旧高亮
-// 清除网页上已有的高亮 <span> 标签，把文字恢复成普通文本
 function clearHighlights() {
     document.querySelectorAll('[class^="multi-highlighted-"]').forEach(el => {
         const parent = el.parentNode;
@@ -62,7 +67,6 @@ function buildWordMapAndRegex(lists) {
     if (allWords.length === 0) return { regex: null, wordMap };
 
     const regex = new RegExp(`\\b(${allWords.map(w => escapeRegex(w.word)).join("|")})\\b`, "gi");
-    // ["cat", "dog"] ----->\\b(cat|dog)\\b
     return { regex, wordMap };
 }
 
@@ -70,7 +74,11 @@ function buildWordMapAndRegex(lists) {
 function highlightTextInNode(node, regex, wordMap) {
     if (node.nodeType === 3) {
         const parent = node.parentNode;
-        if (!parent || /(script|style|textarea|input)/i.test(parent.tagName)) return;
+        if (!parent) return;
+
+        // 跳过输入框、脚本、样式、富文本编辑区
+        if (/(script|style|textarea|input)/i.test(parent.tagName)) return;
+        if (parent.isContentEditable) return;
         if (parent.classList && Array.from(parent.classList).some(c => c.startsWith("multi-highlighted-"))) return;
 
         const text = node.nodeValue;
@@ -98,7 +106,17 @@ function highlightTextInNode(node, regex, wordMap) {
 
         parent.replaceChild(frag, node);
     } else if (node.nodeType === 1 && node.childNodes) {
+        // 跳过整个 contenteditable 容器  解决文字编辑区如果输入了单词列表中的某个词导致的光标异常
+        if (node.isContentEditable) return;
         if (node.classList && Array.from(node.classList).some(c => c.startsWith("multi-highlighted-"))) return;
+
+        // 跳过动态生成回答区域 & 其他不想高亮的 UI      这部分代码好像没啥用
+        const skipSelectors = [
+            '.ai-answer-container',  // AI 回答生成区
+            '#chat-output',
+        ];
+        if (skipSelectors.some(sel => node.matches(sel) || node.closest(sel))) return;
+
         Array.from(node.childNodes).forEach(child => highlightTextInNode(child, regex, wordMap));
     }
 }
@@ -113,8 +131,7 @@ function highlightAllListsBatched(lists) {
 
     const nodes = Array.from(document.body.childNodes);
 
-    function processBatch(batchSize = 100) {
-        // batchSize = 50  改成 300
+    function processBatch(batchSize = 300) {
         let count = 0;
 
         function next() {
@@ -158,7 +175,7 @@ function refreshHighlights() {
         observer.disconnect(); // 暂时停止监听
         highlightAllListsBatched(lists);
         observer.observe(document.body, { childList: true, subtree: true }); // 恢复监听
-        // observer.observe(document.body, { childList: true, subtree: true ,characterData: true });  characterData会影响文字输入
+        // 注意：不启用 characterData，避免光标移动异常
     });
 }
 
@@ -170,6 +187,5 @@ chrome.runtime.onMessage.addListener(msg => {
     if (msg.type === "update") refreshHighlights();
 });
 
-// 该版本可正常使用，但是点击下一页，会没有高亮反应;目前谷歌搜索点击下一页可以自动刷新高亮/百度搜索不行
-// 高亮效率能否再提高?
-// 新发现问题，如果在输入框输入的单词存在于单词列表中，会出现光标异常，输入异常
+// 处理了test2的文字输入异常问题
+// 可以正常运行  chatgpt生成回答过程中有异常高亮
