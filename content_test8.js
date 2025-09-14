@@ -9,6 +9,7 @@ function escapeHtml(s) {
     }[c]));
 }
 
+
 // 转义正则特殊字符
 function escapeRegex(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -25,7 +26,7 @@ function clearHighlights() {
     });
 }
 
-// 注入样式（每个列表一次）
+// 注入样式（每个列表一次,会存在多个单词列表，不同单词列表的高亮效果不同）
 function injectStyles(lists) {
     lists.forEach((list, listIndex) => {
         if (!list.enabled) return;
@@ -79,7 +80,7 @@ function highlightTextInNode(node, regex, wordMap) {
         // 跳过输入框、脚本、样式、富文本编辑区
         if (/(script|style|textarea|input)/i.test(parent.tagName)) return;
         if (parent.isContentEditable) return;
-        if (parent.classList && Array.from(parent.classList).some(c => c.startsWith("multi-highlighted-"))) return;
+        if (parent.classList && Array.from(parent.classList).some(c => c.startsWith("multi-highlighted-")  )) return;
 
         const text = node.nodeValue;
         if (!regex || !regex.test(text)) return;
@@ -106,6 +107,7 @@ function highlightTextInNode(node, regex, wordMap) {
 
         parent.replaceChild(frag, node);
     } else if (node.nodeType === 1 && node.childNodes) {
+
         // 跳过整个 contenteditable 容器  解决文字编辑区如果输入了单词列表中的某个词导致的光标异常
         if (node.isContentEditable) return;
         if (node.classList && Array.from(node.classList).some(c => c.startsWith("multi-highlighted-"))) return;
@@ -114,8 +116,21 @@ function highlightTextInNode(node, regex, wordMap) {
         const skipSelectors = [
             '.ai-answer-container',  // AI 回答生成区
             '#chat-output',
+            '.view-line'  ,           // 力扣的 代码编辑区不高
+            'token'                   // 力扣题解
         ];
-        if (skipSelectors.some(sel => node.matches(sel) || node.closest(sel))) return;
+
+        const skipPrefixes = ['hljs-','language-']; // gpt的一些生成  力扣题解
+
+        // if (skipSelectors.some(sel => node.matches(sel) || node.closest(sel) )) return;
+        if (
+            // 跳过固定名称的
+            skipSelectors.some(sel => node.matches(sel) || node.closest(sel)) ||
+            // 跳过xxx前缀的
+            (node.classList && Array.from(node.classList).some(cls =>
+                skipPrefixes.some(prefix => cls.startsWith(prefix))
+            ))
+        ) return;
 
         Array.from(node.childNodes).forEach(child => highlightTextInNode(child, regex, wordMap));
     }
@@ -130,6 +145,7 @@ function highlightAllListsBatched(lists) {
     if (!regex || wordMap.size === 0) return;
 
     const nodes = Array.from(document.body.childNodes);
+    //document.body.childNodes 是一个属性，它返回一个包含document.body节点的所有子节点的NodeList对象。这些子节点可以是元素节点、文本节点、注释节点等
 
     function processBatch(batchSize = 300) {
         let count = 0;
@@ -166,8 +182,31 @@ const observer = new MutationObserver(mutations => {
     });
 });
 
+
+
+// 需要排除的域名或网址（黑名单模式）
+const excludedSites = [
+    // "leetcode.cn",     // 力扣
+    "chatgpt.com" // ChatGPT
+];
+
+// 检查当前站点是否在排除列表
+function isExcludedSite() {
+    return excludedSites.some(site => window.location.hostname.includes(site));
+}
+
+
+
+
 // 刷新高亮（安全处理 observer）
 function refreshHighlights() {
+
+    if (isExcludedSite()) {
+        console.log("当前站点在排除列表中，跳过高亮");
+        return; // 不执行任何高亮逻辑
+    }
+
+
     chrome.storage.local.get("lists", data => {
         const lists = data.lists || [];
         if (lists.length === 0) return;
