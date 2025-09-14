@@ -16,6 +16,7 @@ observer
 ```
 
 ## chrome插件说明
+- 火狐插件下载`https://addons.mozilla.org/zh-CN/firefox/addon/words-highlighter-%E5%8D%95%E8%AF%8D%E9%AB%98%E4%BA%AE/`
 - 核心的页面高亮js说明:`content` `content_test2` ` content_test8` 是可以正常使用的  `content_test8`增加了长度优先处理，也就是hedge fund会整体高亮而不是拆成hedge和fund两部分
 - 先使用content_test8吧，测试下来，浏览各大英文网站都是能正常高亮的
 - 在manifest.json进行设置
